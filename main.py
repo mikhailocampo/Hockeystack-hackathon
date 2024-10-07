@@ -23,3 +23,4 @@ view = View()
 
 # Run Main app logic
 view.render(controller)
+st.write(ss)

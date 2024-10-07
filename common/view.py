@@ -22,7 +22,9 @@ class View:
     
     def render(self, controller):
         view_methods = {
-            Views.OVERVIEW: self.render_overview_view
+            Views.OVERVIEW: self.render_overview_view,
+            Views.INGRESS: self.render_ingress_view,
+            Views.DETAILED: self.render_detailed_view
         }
         view_method = view_methods.get(ss.current_page)
         if view_method:
@@ -33,20 +35,29 @@ class View:
     
     
     def render_overview_view(self, controller):
-        container = self.canvas.empty().container()
+        container = self.canvas.empty()
         
         if ss.current_page == Views.OVERVIEW:
-            container.title('Overview Page')
             
             # Pull from Supabase, create a list of all of the clients as a Dataframe
             df = controller.pull_clients_overview()
-            container.table(df)
-            # On button click, switch the ss.client and ss.current_page to pass onto ingress / detail
-            view_ingress = container.button("View Ingress")
-            if view_ingress:
-                self.
-            # On client click, switch the ss.client and ss.current_page to pass onto detailed
-    
+
+            # Create a button for each client
+            for index, row in df.iterrows():
+                col1, col2, col3, col4 = container.columns([1, 1, 1, 1])
+                col1.write(row['client_name']) 
+                col2.write(row['health_float'])
+                view_details = col3.button("View Details")
+                add_analysis = col4.button("Add New Analysis")
+            
+            
+            if view_details:
+                container.empty()
+                self.on_client_selected(controller, row['client_id'])
+            
+            if add_analysis:
+                container.empty()
+                self.on_switch_to_ingress(controller, row['client_id'])
     
     def render_ingress_view(self, controller):
         container = self.canvas.empty()
@@ -64,7 +75,20 @@ class View:
                 controller.analyze_video(yt_url)
     
     
+    def render_detailed_view(self, controller):
+        container = self.canvas.empty()
+        container.title('Detailed View')
+    
+    
+    
     # Callback Functions
-    def on_switch_to_ingress(self, controller):
-        controller.set_page(Views.INGRESS)
-        controller.set_client_id(ss.client_id)
+    def on_client_selected(self, controller, client_id):
+        ss.client_id = client_id
+        ss.current_page = Views.DETAILED
+        self.render(controller)
+
+    def on_switch_to_ingress(self, controller, client_id):
+        self.canvas.empty()
+        ss.client_id = client_id
+        ss.current_page = Views.INGRESS
+        self.render(controller)
